@@ -12,22 +12,27 @@ from socket import *
 
 
 def play_cities_game(client_socket):
-    print("You have entered the Cities game mode. Type 'end game' to quit the game mode.")
-    my_turn = True
 
-    while True:
-        if my_turn:
-            city = input("Enter a city: ")
-            client_socket.send(city.encode())
-            if city == "/q" or city == "end game":
-                return city
-            my_turn = False
-        else:
-            response = client_socket.recv(size_limit).decode()
-            if response == "/q":
-                return response
-            print(f"Server's choice or message: {response}")
-            my_turn = True
+    game_start_message = "Starting cities game..."
+    print(game_start_message)
+
+
+
+    # my_turn = True
+    #
+    # while True:
+    #     if my_turn:
+    #         city = input("Enter a city: ")
+    #         client_socket.send(city.encode())
+    #         if city == "/q" or city == "end game":
+    #             return city
+    #         my_turn = False
+    #     else:
+    #         response = client_socket.recv(size_limit).decode()
+    #         if response == "/q":
+    #             return response
+    #         print(f"Server's choice or message: {response}")
+    #         my_turn = True
 
 
 server_name = "127.0.0.1"
@@ -36,29 +41,32 @@ size_limit = 4096  # All messages sent must be limited to 4096 bytes
 client_socket = socket(AF_INET, SOCK_STREAM)
 client_socket.connect((server_name, server_port))
 
+print("Starting chat mode...")
 while True:
+
     message_to_send = input("Enter Input (or 'play cities' to start the game) > ")
     client_socket.send(message_to_send.encode())
+    print("Receiving...")
 
     if message_to_send == "/q":
         print("Client has requested to quit.")
+        client_socket.send("/q".encode())  # Send exit message to server to shut it down
         break
     elif message_to_send == "play cities":
-        game_exit_code = play_cities_game(client_socket)
-        if game_exit_code == "/q":
-            print("Quitting from game mode...")
-            break
-        elif game_exit_code == "end game":
-            print("Exiting game mode, back to chat.")
-            response = client_socket.recv(size_limit).decode()
-            print(f"Response: {response}")
+        print("Client has requested to play cities.")
+        play_cities_game(client_socket)
+        print("Starting chat mode...")
     else:
-        response = client_socket.recv(size_limit).decode()
-        if response == "/q":
+        message_received = client_socket.recv(size_limit).decode()
+        if message_received == "/q":
             print("Server has requested to quit.")
             break
+        elif message_received == "play cities":
+            print("Server has requested to play cities.")
+            play_cities_game(client_socket)
+            print("Starting chat mode...")
         else:
-            print(f"From Server: {response}")
+            print(f"Message from server: {message_received}")
 
 client_socket.close()
-print("Connection closed.")
+print("Connection closed, program terminated.")
