@@ -37,13 +37,13 @@ client_socket = socket(AF_INET, SOCK_STREAM)
 client_socket.connect((server_name, server_port))
 
 while True:
-    message = input("Enter Input (or 'play cities' to start the game) > ")
-    client_socket.send(message.encode())
+    message_to_send = input("Enter Input (or 'play cities' to start the game) > ")
+    client_socket.send(message_to_send.encode())
 
-    if message == "/q":
-        print("Quitting...")
+    if message_to_send == "/q":
+        print("Client has requested to quit.")
         break
-    elif message == "play cities":
+    elif message_to_send == "play cities":
         game_exit_code = play_cities_game(client_socket)
         if game_exit_code == "/q":
             print("Quitting from game mode...")

@@ -12,7 +12,6 @@ from socket import *
 
 valid_cities = {"new york", "kansas", "seattle", "los angeles", "san francisco", "miami", "dallas", "austin", "boston", "chicago"}
 
-
 def is_valid_city(city, last_letter, used_cities):
     city = city.lower()
     if last_letter:
@@ -38,13 +37,13 @@ def play_cities_game(connection_socket):
                 connection_socket.send("Invalid city. Your turn.".encode())
             my_turn = False
         else:
-            message = connection_socket.recv(size_limit).decode().lower()
-            if message == "/q" or message == "end game":
-                return "/q" if message == "/q" else "Exiting game mode."
-            elif is_valid_city(message, last_letter, used_cities):
-                used_cities.add(message)
-                last_letter = message[-1]
-                print(f"Client chose: {message}")
+            message_received = connection_socket.recv(size_limit).decode().lower()
+            if message_received == "/q" or message_received == "end game":
+                return "/q" if message_received == "/q" else "Exiting game mode."
+            elif is_valid_city(message_received, last_letter, used_cities):
+                used_cities.add(message_received)
+                last_letter = message_received[-1]
+                print(f"Client chose: {message_received}")
                 my_turn = True
             else:
                 warning = "Client provided an invalid city. Server's turn."
@@ -62,15 +61,16 @@ print("The server is ready to receive")
 
 while True:
     connection_socket, addr = server_socket.accept()
-    print(f"Connection established with {addr}")
+    print(f"Connection established with {addr}.")
 
+    # Initialize chat mode, since the connection is always established by the client they have the first turn
     while True:
-        message = connection_socket.recv(size_limit).decode()
-        if message == "/q":
+        message_received = connection_socket.recv(size_limit).decode()
+        if message_received == "/q":
             print("Client has requested to quit.")
-            connection_socket.send("/q".encode())
+            connection_socket.send("/q".encode())  # Send exit message to client to shut down its end
             break
-        elif message == "play cities":
+        elif message_received == "play cities":
             print("Switching to Cities game mode.")
             game_response = play_cities_game(connection_socket)
             if game_response == "/q":
@@ -80,9 +80,16 @@ while True:
             else:
                 connection_socket.send(game_response.encode())
         else:
-            print(f"From Client: {message}")
-            response = input("Enter Response > ")
-            connection_socket.send(response.encode())
+            print(f"From Client: {message_received}")
+            message_to_send = input("Enter Input > ")
+            if message_to_send == "/q":
+                print("Server has requested to quit.")
+                connection_socket.send("/q".encode())  # Send exit message to client to shut down its end
+                break
+            else:
+                connection_socket.send(message_to_send.encode())
 
-    connection_socket.close()
-    print("Connection closed.")
+    break
+
+connection_socket.close()
+print("Connection closed.")
