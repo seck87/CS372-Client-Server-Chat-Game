@@ -13,29 +13,36 @@ from socket import *
 
 def play_cities_game(client_socket):
     print("Starting cities game...")
+    clients_turn = True
 
     while True:
-        last_letter = client_socket.recv(4096).decode()
 
-        if last_letter == "1":
-            prompt = "Enter the first city name starting with any letter: "
-        else:
-            prompt = f"Enter a city name starting with '{last_letter}' (or '/q' to quit): "
+        if clients_turn:
 
-        city_to_send = input(prompt).lower()
-        print("Waiting for the server's turn...")
+            last_letter = client_socket.recv(4096).decode()
 
-        if city_to_send == "/q":
-            print("Quitting game. Returning to chat mode...")
+            if last_letter == "1":
+                prompt = "Enter the first city name starting with any letter: "
+            else:
+                prompt = f"Enter a city name starting with '{last_letter}' (or '/q' to quit): "
+
+            city_to_send = input(prompt).lower()
+
+            if city_to_send == "/q":
+                print("Quitting game. Returning to chat mode...")
+                client_socket.send(city_to_send.encode())
+                return
+
             client_socket.send(city_to_send.encode())
-            return
+            message_from_server = client_socket.recv(4096).decode()
 
-        client_socket.send(city_to_send.encode())
-        validity_message_from_server = client_socket.recv(4096).decode()
+            if message_from_server == "/q":
+                print("Server has requested to quit, returning to chat mode...")
+                return
 
-        if validity_message_from_server == "invalid":
-            print("Invalid city name. You lose. Returning to chat mode...")
-            return
+            if message_from_server == "invalid":
+                print("Invalid city name by server. You win. Returning to chat mode...")
+                return
 
 
 def main():

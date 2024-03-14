@@ -30,7 +30,11 @@ def play_cities_game(connection_socket):
 
     while True:
         if not servers_turn:  # Client's turn to play
+
+            # Send the letter to client
             connection_socket.send(last_letter.encode())
+
+            # Check the city name sent by client
             city_received = connection_socket.recv(4096).decode().lower()
 
             if city_received == "/q":
@@ -48,9 +52,12 @@ def play_cities_game(connection_socket):
 
         else:  # Server's turn to play
             city_to_send = input(f"Enter a city name starting with '{last_letter}' (or '/q' to quit): ").lower()
-            print("Waiting for the client's turn...")
+
+            # print("Waiting for the client's turn...")
+
             if city_to_send == "/q":
                 print("Quitting game. Returning to chat mode...")
+                connection_socket.send(city_to_send.encode())
                 return
 
             if is_valid_city(city_to_send, last_letter, valid_cities, used_cities):
@@ -60,6 +67,7 @@ def play_cities_game(connection_socket):
                 connection_socket.send(city_to_send.encode())
             else:
                 print("Invalid city. Server loses. Returning to chat mode...")
+                connection_socket.send("invalid".encode())
                 return
 
 def main():
