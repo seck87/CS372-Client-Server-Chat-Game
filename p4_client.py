@@ -9,6 +9,9 @@
 # Source URL: https://realpython.com/python-sockets/
 
 from socket import *
+server_name = "127.0.0.1"
+server_port = 12000
+size_limit = 4096  # All messages sent must be limited to 4096 bytes
 
 
 def play_cities_game(client_socket):
@@ -16,28 +19,48 @@ def play_cities_game(client_socket):
     game_start_message = "Starting cities game..."
     print(game_start_message)
 
+    clients_turn= True
+
+    # Client always has the first turn
+    while True:
+
+        if clients_turn:  # Client's turn to play
+
+            # Receive the last letter information from the server
+            last_letter = client_socket.recv(size_limit).decode()
+
+            if last_letter == "1":
+                city_to_send = input("Enter the first city name beginning with any letter > ")
+                if city_to_send == "/q":
+                    print("Client has requested to quit game and return to chat mode.")
+                    print("Quitting game and returning to chat mode...")
+                    return
+                client_socket.send(city_to_send.encode())
+                print("Receiving...")
+            else:
+                city_to_send = input(f"Enter a city name beginning with {last_letter} > ")
+                if city_to_send == "/q":
+                    print("Client has requested to quit game and return to chat mode.")
+                    print("Quitting game and returning to chat mode...")
+                    return
+                client_socket.send(city_to_send.encode())
+                print("Receiving...")
+
+            validity_message_from_server = client_socket.recv(size_limit).decode()
+            if validity_message_from_server == "invalid":
+                print("Invalid city name, client loses the game. Returning to chat mode...")
+                return
+            else:  # validity message from server is valid
+                clients_turn = False
+
+        else:  # Server's turn to play
+            city_received = client_socket.recv(size_limit).decode()
+
+            if city_received == "/q":
+                print("Server has requested to quit game and return to chat mode.")
+                return
 
 
-    # my_turn = True
-    #
-    # while True:
-    #     if my_turn:
-    #         city = input("Enter a city: ")
-    #         client_socket.send(city.encode())
-    #         if city == "/q" or city == "end game":
-    #             return city
-    #         my_turn = False
-    #     else:
-    #         response = client_socket.recv(size_limit).decode()
-    #         if response == "/q":
-    #             return response
-    #         print(f"Server's choice or message: {response}")
-    #         my_turn = True
-
-
-server_name = "127.0.0.1"
-server_port = 12000
-size_limit = 4096  # All messages sent must be limited to 4096 bytes
 client_socket = socket(AF_INET, SOCK_STREAM)
 client_socket.connect((server_name, server_port))
 

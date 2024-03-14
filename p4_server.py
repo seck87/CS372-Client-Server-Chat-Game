@@ -9,12 +9,12 @@
 # Source URL: https://realpython.com/python-sockets/
 
 from socket import *
+server_port = 12000
+size_limit = 4096
 
-valid_cities = {"new york", "kansas", "seattle", "los angeles", "san francisco", "miami", "dallas", "austin", "boston", "chicago"}
-
-def is_valid_city(city, last_letter, used_cities):
+def is_valid_city(city, last_letter, valid_cities, used_cities):
     city = city.lower()
-    if last_letter:
+    if last_letter != "1":
         return city not in used_cities and city.startswith(last_letter) and city in valid_cities
     else:
         return city not in used_cities and city in valid_cities
@@ -25,39 +25,56 @@ def play_cities_game(connection_socket):
     game_start_message = "Starting cities game..."
     print(game_start_message)
 
+    valid_cities = {"new york", "kansas", "seattle", "los angeles", "san francisco", "miami", "dallas", "austin",
+                    "boston", "chicago"}
+    used_cities = set()
 
-    # used_cities = set()
-    # last_letter = ''
-    # my_turn = False
-    #
-    # while True:
-    #     if my_turn:
-    #         response = input("Enter a city: ")
-    #         if is_valid_city(response, last_letter, used_cities):
-    #             used_cities.add(response.lower())
-    #             last_letter = response[-1].lower()
-    #             connection_socket.send(response.encode())
-    #         else:
-    #             print("Invalid city. Skipping turn.")
-    #             connection_socket.send("Invalid city. Your turn.".encode())
-    #         my_turn = False
-    #     else:
-    #         message_received = connection_socket.recv(size_limit).decode().lower()
-    #         if message_received == "/q" or message_received == "end game":
-    #             return "/q" if message_received == "/q" else "Exiting game mode."
-    #         elif is_valid_city(message_received, last_letter, used_cities):
-    #             used_cities.add(message_received)
-    #             last_letter = message_received[-1]
-    #             print(f"Client chose: {message_received}")
-    #             my_turn = True
-    #         else:
-    #             warning = "Client provided an invalid city. Server's turn."
-    #             print(warning)
-    #             my_turn = True
+    last_letter = "1"
+    servers_turn = False
+
+    while True:
+
+        if not servers_turn:  # Client's turn to play
+            # Inform the client about the last letter
+            connection_socket.send(last_letter.encode())
+            city_received = connection_socket.recv(size_limit).decode()
+
+            if city_received == "/q":
+                print("Client has requested to quit game and return to chat mode.")
+                print("Quitting game and returning to chat mode...")
+                return
+
+            if is_valid_city(city_received, last_letter, valid_cities, used_cities):
+                used_cities.add(city_received.lower())
+                last_letter = city_received[-1].lower()
+                servers_turn = True
+            else:
+                city_validity = "invalid"
+                connection_socket.send(city_validity.encode())
+                print("Invalid city name, client loses the game. Returning to chat mode...")
+                return
+
+        else:  # Server's turn to play
+            city_to_send = input(f"Enter a city name beginning with {last_letter} > ")
+
+            if city_to_send == "/q":
+                print("Server has requested to quit game and return to chat mode.")
+                print("Quitting game and returning to chat mode...")
+                return
+
+            if is_valid_city(city_to_send, last_letter, valid_cities, used_cities):
+                used_cities.add(city_to_send.lower())
+                last_letter = city_to_send[-1].lower()
+                servers_turn = False
+                print("Receiving...")
+            else:
+                city_validity = "invalid"
+                connection_socket.send(city_validity.encode())
+                print("Invalid city name, server loses the game. Returning to chat mode...")
+                return
 
 
-server_port = 12000
-size_limit = 4096
+
 server_socket = socket(AF_INET, SOCK_STREAM)
 server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 server_socket.bind(("", server_port))
