@@ -20,9 +20,10 @@ def play_cities_game(client_socket):
         if last_letter == "1":
             prompt = "Enter the first city name starting with any letter: "
         else:
-            prompt = f"Enter a city name starting with '{last_letter}': "
+            prompt = f"Enter a city name starting with '{last_letter}' (or '/q' to quit): "
 
         city_to_send = input(prompt).lower()
+        print("Waiting for the server's turn...")
 
         if city_to_send == "/q":
             print("Quitting game. Returning to chat mode...")
@@ -35,8 +36,7 @@ def play_cities_game(client_socket):
         if validity_message_from_server == "invalid":
             print("Invalid city name. You lose. Returning to chat mode...")
             return
-        else:
-            print("Waiting for the server's turn...")
+
 
 
 def main():
