@@ -38,7 +38,6 @@ def play_cities_game(client_socket):
             return
 
 
-
 def main():
     client_socket = socket(AF_INET, SOCK_STREAM)
     client_socket.connect(("127.0.0.1", 12000))
